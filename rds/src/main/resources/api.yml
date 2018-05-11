@@ -1,0 +1,205 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Swagger RDS
+  description: "This is the API of RDS service. You can find out more about the service at [http://example.com/rds](http://example.com/rds)."
+  license:
+    name: Example 2.0
+    url: http://www.example.com/licenses/LICENSE-2.0.html
+
+host: "rds.example.com"
+basePath: "/"
+schemes:
+  - "http"
+  - "https"
+
+tags:
+  - name: instance
+    description: "API about RDS Ec2Instance"
+  - name: snapshot
+    description: "API about RDS snapshot"
+
+paths:
+  /instances:
+    post:
+      summary: Create RDS instance
+      tags:
+        - instance
+      operationId: createInstance
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateDBInstanceRequest'
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/CreateDBInstanceResponse'
+        401:
+          description: Unauthorized
+        409: #TODO: 当资源已经存在时返回409 Conflict，并在response中返回当前资源的信息
+          description: Resource already exists
+        400:
+          description: Bad Request
+
+    get:
+      summary: Get RDS instances list
+      tags:
+        - instance
+      operationId: findInstances
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/DBInstance'
+
+  /instances/{instanceId}:
+    get:
+      summary: Get info of instanceId
+      tags:
+        - instance
+      operationId: findInstance
+      parameters:
+        - in: path
+          description: instanceId
+          name: instanceId
+          type: string
+          required: true
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/DBInstance'
+        404: #TODO: 代码中实现404返回值
+          description: DBInstanceNotFoundFault
+          schema:
+            $ref: '#/definitions/DBInstanceNotFoundFault'
+
+  /instances/{instanceId}/snapshots:
+    post:
+      summary: create a snapshot of the specified RDS instance
+      tags:
+        - snapshot
+      operationId: createSnapshot
+      parameters:
+        - in: path
+          description: instanceId
+          name: instanceId
+          type: string
+          required: true
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/DBSnapshot'
+
+definitions:
+  CreateDBInstanceRequest:
+    description: <p/>
+    properties:
+      instanceId:
+        type: string
+        description: '<p>The DB instance identifier. This parameter is stored as a lowercase string.</p> '
+      instanceClass:
+        type: string
+        description: '<p>The compute and memory capacity of the DB instance. Note that not all instance classes are available in all regions for all DB engines.</p> <p> Valid Values: <code>db.t1.micro | db.m1.small | db.m1.medium | db.m1.large | db.m1.xlarge | db.m2.xlarge |db.m2.2xlarge | db.m2.4xlarge | db.m3.medium | db.m3.large | db.m3.xlarge | db.m3.2xlarge | db.m4.large | db.m4.xlarge | db.m4.2xlarge | db.m4.4xlarge | db.m4.10xlarge | db.r3.large | db.r3.xlarge | db.r3.2xlarge | db.r3.4xlarge | db.r3.8xlarge | db.t2.micro | db.t2.small | db.t2.medium | db.t2.large</code> </p>'
+      engine:
+        type: string
+        description: '<p>The name of the database engine to be used for this instance.</p> <p> Valid Values: <code>mysql</code> | <code>mariadb</code> | <code>oracle-se1</code> | <code>oracle-se2</code> | <code>oracle-se</code> | <code>oracle-ee</code> | <code>sqlserver-ee</code> | <code>sqlserver-se</code> | <code>sqlserver-ex</code> | <code>sqlserver-web</code> | <code>postgres</code> | <code>aurora</code> </p> <p>Not every database engine is available for every AWS region.</p>'
+      port:
+        type: integer
+        description: '<p>The port number on which the database accepts connections.</p>'
+      availableZone:
+        type: string
+        description: 'available zone of the instance to create'
+      sourceDBId:
+        type: string
+        description: 'source db identifier from which this instances replicates'
+    required:
+      - instanceId
+      - instanceClass
+      - engine
+      - port
+      - availableZone
+    type: object
+
+  CreateDBInstanceResponse:
+    properties:
+      instance:
+        $ref: '#/definitions/DBInstance'
+    type: object
+
+  DBInstance:
+    description: '<p>Contains the result of a successful invocation of the following actions:</p> <ul> <li> <p> <a>CreateDBInstance</a> </p> </li> <li> <p> <a>DeleteDBInstance</a> </p> </li> <li> <p> <a>ModifyDBInstance</a> </p> </li> </ul> <p>This data type is used as a response element in the <a>DescribeDBInstances</a> action.</p>'
+    properties:
+      instanceId:
+        type: string
+        description: Contains a user-supplied database identifier. This identifier is the unique key that identifies a DB instance.
+      instanceClass:
+        type: string
+        description: Contains the name of the compute and memory capacity class of the DB instance.
+      engine:
+        type: string
+        description: Provides the name of the database engine to be used for this DB instance.
+      port:
+        type: integer
+        description: 'Specifies the port that the DB instance listens on. If the DB instance is part of a DB cluster, this can be a different port than the DB cluster port.'
+      availableZone:
+        type: string
+        description: 'available zone of the instance to create'
+      status:
+        type: string
+        description: Specifies the current state of this database.
+      ec2InstanceId:
+        type: string
+        description: id of ec2 instance on which this rds is running
+    type: object
+
+  FindDBInstancesRequest:
+    description: <p/>
+    properties:
+      instanceId:
+        type: string
+        description: '<p>The user-supplied instance identifier. If this parameter is specified, information from only the specific DB instance is returned. This parameter isn''t case-sensitive.</p> <p>Constraints:</p> <ul> <li> <p>Must contain from 1 to 63 alphanumeric characters or hyphens</p> </li> <li> <p>First character must be a letter</p> </li> <li> <p>Cannot end with a hyphen or contain two consecutive hyphens</p> </li> </ul>'
+    type: object
+
+  InstanceList:
+    description: RDS instance list
+    type: array
+    items:
+      $ref: '#/definitions/DBInstance'
+
+  DBInstanceNotFoundFault:
+    description: ' <i>DBInstanceIdentifier</i> does not refer to an existing DB instance. '
+    properties: {}
+    type: object
+
+  DBSnapshot:
+    description: '<p>Contains the result of a successful invocation of the following actions:</p> <ul> <li> <p> <a>CreateDBInstance</a> </p> </li> <li> <p> <a>DeleteDBInstance</a> </p> </li> <li> <p> <a>ModifyDBInstance</a> </p> </li> </ul> <p>This data type is used as a response element in the <a>DescribeDBInstances</a> action.</p>'
+    properties:
+      snapshotId:
+        type: string
+        description: Contains generated snapshot identifier.
+      instanceId:
+        type: string
+        description: Contains a user-supplied database identifier. This identifier is the unique key that identifies a DB instance.
+    type: object
+
+#TODO: [1.4] 0. 写一个按指定instanceId查询某个instance信息的uri接口
+#TODO: [1.4] 1. 在rds目录下调用 `mvn compile' 生成代码到target目录下
+#TODO: [1.4] 2. 使代码编译通过，运行`mvn clean spring-boot:run'，并在http://localhost:9000/api-docs中查看动态api文档
+#TODO: [1.4] 3. 为definitions增加example
+#TODO: [1.4] 4. 为CreateDBInstanceRequest中的instanceId增加长度校验长度在[3，10]之间
+#TODO: [1.4] 5. 为/instances/{instanceId}和/instances/{instanceId}/snapshots中的instanceId参数提取到parameters中.
+#               可参考：https://apihandyman.io/writing-openapi-swagger-specification-tutorial-part-3-simplifying-specification-file/
+#
+#参考：
+#      https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md
+#      http://openapi-specification-visual-documentation.apihandyman.io/
+#工具：
+#      swagger_ui:     https://github.com/swagger-api/swagger-ui/archive/v3.0.12.zip
+#      swagger_editor: http://editor.swagger.io/
